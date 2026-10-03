@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Цэцэгт ургамлын амьдралын эргэлт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lobster&family=Montserrat:wght@500;600;700;800&display=swap">
+<style>
+:root{
+  --ink:#1f3d28; --muted:#5c7564; --line:#dcefdc; --card:#ffffff;
+  --leaf:#3fae49; --leaf-d:#2b8a35; --leaf-soft:#e3f6e1;
+  --petal:#ff6fa3; --petal-d:#e04882; --petal-soft:#ffe6f0;
+  --sun:#ffcc33; --sun-d:#d9a400; --sun-soft:#fff6d6;
+  --soil:#8b5a2b; --soil-d:#6b4420; --sky:#2f9be0; --sky-soft:#e3f3ff;
+  --green:#22a565; --red:#e5484d;
+  --shadow:0 10px 26px rgba(40,90,40,.14);
+  --tfont:"Lobster",cursive;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{color:var(--ink);font-family:"Montserrat","Segoe UI",system-ui,sans-serif;font-weight:600;font-size:20px;line-height:1.45;overflow:hidden;
+  background:linear-gradient(180deg,#e9f7ff 0%,#f4fbf0 55%,#e6f5dc 100%)}
+button{font:inherit;cursor:pointer}
+
+/* ===== Decorations ===== */
+.vine{position:fixed;z-index:0;pointer-events:none;width:180px;height:180px;opacity:.55}
+.vine.l{left:-10px;top:60px}.vine.r{right:-10px;top:60px;transform:scaleX(-1)}
+.petals{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.petals span{position:absolute;top:-30px;width:16px;height:12px;border-radius:12px 0 12px 0;background:var(--petal);opacity:.55;animation:fall linear infinite}
+.petals span:nth-child(3n){background:#ffb3cf}.petals span:nth-child(4n){background:var(--sun)}
+@keyframes fall{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(40px,55vh) rotate(180deg)}100%{transform:translate(-20px,110vh) rotate(360deg)}}
+
+/* ===== Header ===== */
+.top{position:fixed;inset:0 0 auto 0;height:62px;display:flex;align-items:center;gap:14px;padding:0 18px;z-index:20;background:#fff}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:18px;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='18' viewBox='0 0 90 18'%3E%3Cpath d='M0 3 Q45 9 90 3' fill='none' stroke='%232b8a35' stroke-width='2.5'/%3E%3Cpath d='M20 5 q6 10 14 6 q-4 -8 -14 -6z' fill='%233fae49'/%3E%3Cpath d='M60 6 q-2 11 -12 10 q0 -8 12 -10z' fill='%2366c96f'/%3E%3Ccircle cx='80' cy='6' r='3' fill='%23ff6fa3'/%3E%3C/svg%3E") repeat-x top/90px 18px}
+.brand{font-family:var(--tfont);font-size:24px;display:flex;align-items:center;gap:8px;white-space:nowrap;color:var(--leaf-d)}
+.brand .fl{display:inline-block;font-size:28px;animation:sway 3s ease-in-out infinite;transform-origin:bottom}
+@keyframes sway{50%{transform:rotate(10deg)}}
+.stage{flex:1;min-width:0}
+.stage-name{font-weight:800;color:var(--petal-d);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.timer{display:flex;align-items:center;gap:8px;font-weight:800;font-variant-numeric:tabular-nums;font-size:23px;padding:3px 14px;border-radius:99px;background:var(--leaf-soft);color:var(--leaf-d)}
+.timer.warn{background:var(--sun-soft);color:#a37a00}
+.timer.over{background:#ffe0e0;color:var(--red)}
+.tbtn{border:2px solid var(--line);background:#fff;border-radius:99px;padding:5px 13px;font-weight:700;font-size:16px;color:var(--ink)}
+.tbtn:hover{border-color:var(--leaf);color:var(--leaf-d)}
+.music{display:flex;align-items:center;gap:6px;padding:3px 8px 3px 3px;border-radius:99px;border:2px solid var(--line);background:#fff}
+.music .tbtn{border:none;padding:4px 10px}
+.music.on{border-color:var(--petal);background:var(--petal-soft)}
+.music.on .tbtn{color:var(--petal-d)}
+.music.on .eq i{animation:eq .9s ease-in-out infinite}
+.eq{display:inline-flex;align-items:flex-end;gap:2px;height:14px;margin-left:4px;vertical-align:-1px}
+.eq i{width:3px;height:4px;background:currentColor;border-radius:2px}
+.eq i:nth-child(2){animation-delay:.2s!important}.eq i:nth-child(3){animation-delay:.4s!important}
+@keyframes eq{0%,100%{height:4px}50%{height:14px}}
+.music input{width:90px;accent-color:var(--petal);cursor:pointer}
+@media (max-width:1100px){.music input{display:none}}
+.progress{position:fixed;top:62px;left:0;height:4px;background:linear-gradient(90deg,var(--leaf),var(--petal));z-index:21;transition:width .4s}
+
+/* ===== Slides ===== */
+.deck{position:absolute;inset:80px 0 86px 0;z-index:1}
+.slide{position:absolute;inset:0;overflow:auto;padding:12px clamp(16px,4vw,56px) 24px;opacity:0;visibility:hidden;transform:scale(.96);transform-origin:50% 100%;transition:opacity .45s,transform .45s,visibility .45s}
+.slide.active{opacity:1;visibility:visible;transform:none}
+.inner{max-width:1280px;margin:0 auto}
+h1{font-family:var(--tfont);font-weight:400;font-size:clamp(44px,6vw,80px);line-height:1.08;margin:0 0 14px;color:var(--leaf-d)}
+h2{font-weight:800;font-size:clamp(26px,3vw,38px);margin:0 0 6px;display:flex;align-items:center;gap:12px;color:var(--leaf-d)}
+h3{font-size:22px;margin:0 0 8px;font-weight:800}
+.sub{color:var(--muted);margin:0 0 12px;font-size:19px}
+.card{background:var(--card);border-radius:28px;box-shadow:var(--shadow);padding:16px 20px;position:relative;border:2px solid #e6f3e2}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:none;border-radius:99px;padding:10px 18px;font-weight:800;background:var(--leaf);color:#fff;box-shadow:0 4px 0 var(--leaf-d);transition:transform .1s,filter .15s}
+.btn:hover{filter:brightness(1.07)}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 var(--leaf-d)}
+.btn[disabled]{opacity:.45;cursor:default}
+.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn.ghost.on{background:var(--leaf-soft);border-color:var(--leaf);color:var(--leaf-d)}
+.btn.pink{background:var(--petal);box-shadow:0 4px 0 var(--petal-d)}
+.btn.sun{background:var(--sun);color:#3d2a00;box-shadow:0 4px 0 var(--sun-d)}
+.btn.soil{background:var(--soil);box-shadow:0 4px 0 var(--soil-d)}
+.btn.sm{padding:7px 12px;font-size:15px}
+.muted{color:var(--muted)}
+.note{background:var(--sun-soft);border-radius:18px;padding:10px 14px;margin-top:12px}
+.def{border-radius:16px;padding:9px 13px;margin:7px 0;background:var(--leaf-soft)}
+.def b{color:var(--leaf-d)}
+.feedback{font-size:20px;font-weight:800;min-height:30px;margin-top:8px}
+.feedback.ok{color:var(--leaf-d)}.feedback.no{color:var(--red)}
+.score{font-size:21px;font-weight:800;color:var(--leaf-d)}
+
+/* ===== Nav: soil & flowers ===== */
+.nav{position:fixed;inset:auto 0 0 0;height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;z-index:20;gap:10px;
+  background:radial-gradient(circle at 20px 30px,#7a4c22 0 3px,transparent 4px) 0 0/60px 40px,linear-gradient(180deg,#9b6a3a,var(--soil-d))}
+.nav::before{content:"";position:absolute;left:0;right:0;top:-24px;height:26px;pointer-events:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='26' viewBox='0 0 150 26'%3E%3Cpath d='M0 26 L6 12 L10 26 L16 8 L22 26 L30 14 L34 26 L44 10 L48 26 L58 15 L62 26 L72 6 L78 26 L88 13 L92 26 L104 9 L108 26 L118 14 L124 26 L132 7 L138 26 L146 12 L150 26Z' fill='%233fae49'/%3E%3Cline x1='72' y1='26' x2='72' y2='8' stroke='%232b8a35' stroke-width='2'/%3E%3Ccircle cx='72' cy='6' r='5' fill='%23ff6fa3'/%3E%3Ccircle cx='72' cy='6' r='2' fill='%23ffcc33'/%3E%3C/svg%3E") repeat-x bottom/150px 26px}
+.nav .btn{background:#fff;color:var(--soil-d);box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.dots{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+.dot{width:34px;height:34px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;border:none;background:#c49a6c;color:#fff;font-weight:800;font-size:14px;transition:.2s}
+.dot.on{background:var(--petal);box-shadow:0 0 0 4px #ffd0e2;transform:scale(1.15)}
+.dot.done{background:var(--leaf)}
+.tnotes{position:fixed;right:18px;bottom:96px;width:min(420px,calc(100vw - 36px));background:#fffbe8;border:2px solid var(--sun);border-radius:20px;padding:14px 18px;font-size:17px;box-shadow:var(--shadow);z-index:25;display:none}
+.tnotes.show{display:block}
+.tnotes h4{margin:0 0 6px;font-size:18px}
+.tnotes ul{margin:0;padding-left:20px}
+
+/* ===== Intro ===== */
+.intro{min-height:calc(100vh - 210px);display:flex;align-items:center;justify-content:center}
+.sign{background:#fff;border-radius:40px;box-shadow:0 18px 44px rgba(40,90,40,.2);padding:28px clamp(24px,5vw,64px) 30px;text-align:center;max-width:960px;width:100%;border:4px solid #cdeacb;position:relative}
+.sign .flowers{display:flex;justify-content:center;gap:18px;font-size:clamp(40px,5vw,60px);margin-bottom:6px}
+.sign .flowers span{display:inline-block;animation:sway 3s ease-in-out infinite;transform-origin:bottom}
+.sign .flowers span:nth-child(2){animation-delay:.4s}.sign .flowers span:nth-child(3){animation-delay:.8s}.sign .flowers span:nth-child(4){animation-delay:1.2s}.sign .flowers span:nth-child(5){animation-delay:1.6s}
+.sign .school{font-size:clamp(22px,2.4vw,30px);font-weight:800;color:var(--leaf-d)}
+.sign .subject{font-family:var(--tfont);font-size:clamp(60px,8vw,104px);line-height:1.05;margin:4px 0 12px;color:var(--petal-d)}
+.sign .topic{display:inline-block;font-size:clamp(24px,2.9vw,38px);font-weight:800;color:#fff;padding:10px 28px;border-radius:99px;background:linear-gradient(90deg,var(--leaf),#5cc466)}
+.sign .teacher{margin-top:16px;font-size:clamp(22px,2.4vw,30px);font-weight:800}
+
+/* ===== Video ===== */
+.vid{background:#fff;border-radius:26px;overflow:hidden;box-shadow:var(--shadow);border:2px solid #e6f3e2}
+.vid canvas{display:block;width:100%;height:auto;max-height:calc(100vh - 340px);object-fit:contain;background:#eaf7ff;cursor:pointer}
+.vbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--leaf-soft);flex-wrap:wrap}
+.vbar button{border:none;background:#fff;color:var(--ink);border-radius:99px;padding:6px 12px;font-weight:700;font-size:15px}
+.vprog{flex:1;min-width:120px;height:10px;border-radius:99px;background:#cfe8cc;cursor:pointer;position:relative;overflow:hidden}
+.vprog i{position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--leaf),var(--petal));border-radius:99px}
+.vtime{color:var(--muted);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.riddle{font-size:23px;line-height:1.6}
+.reveal{margin-top:8px;font-family:var(--tfont);font-size:40px;color:var(--sun-d);opacity:0;transform:scale(.6);transition:.4s}
+.reveal.show{opacity:1;transform:none}
+
+/* ===== KWL ===== */
+table{border-collapse:separate;border-spacing:0;width:100%}
+.kwl{border-radius:24px;overflow:hidden;box-shadow:var(--shadow)}
+.kwl th{font-size:22px;padding:14px;color:#fff;text-align:left}
+.kwl th:nth-child(1){background:var(--leaf)}.kwl th:nth-child(2){background:var(--sky)}.kwl th:nth-child(3){background:var(--petal)}
+.kwl td{vertical-align:top;background:#fff;border-right:2px solid var(--line);padding:0;width:33.3%}
+.kwl td:last-child{border-right:none}
+.kwl.two td{width:50%}
+.kwl td div{min-height:260px;padding:14px;outline:none;font-size:20px;font-weight:500;white-space:pre-wrap}
+.kwl td div:empty::before{content:attr(data-ph);color:#a6bba9}
+.kwl td div:focus{background:#fffef2}
+.kwl td div.ro{background:#f6fbf4;color:var(--muted);font-size:18px;min-height:0;height:100%}
+.kwl td div.ro:empty::before{content:"(хоосон)"}
+.kwl.end td:nth-child(3) div{min-height:300px;font-size:22px;background:#fff6fa}
+.goals{list-style:none;padding:0;margin:0}
+.goals li{margin:7px 0;padding:8px 12px 8px 42px;position:relative;background:var(--leaf-soft);border-radius:16px}
+.goals li::before{content:"🌱";position:absolute;left:12px;top:7px}
+
+/* ===== Plant organs ===== */
+.organ svg{width:100%;height:auto;display:block;max-height:calc(100vh - 250px)}
+.organ .hs{cursor:pointer}
+.organ .hs:hover{filter:brightness(1.12) drop-shadow(0 0 6px rgba(255,111,163,.7))}
+.oinfo{font-size:19px;min-height:120px}
+.oinfo .t{font-family:var(--tfont);font-size:40px;color:var(--petal-d)}
+
+/* ===== Canvas boxes ===== */
+.cbox{background:#fff;border-radius:26px;box-shadow:var(--shadow);overflow:hidden;border:2px solid #e6f3e2}
+.cbox canvas{display:block;width:100%;height:auto;max-height:calc(100vh - 310px);object-fit:contain;background:#f6fbf4;touch-action:none}
+.cbox .ctrl{display:flex;gap:8px;flex-wrap:wrap;padding:9px 12px;background:var(--leaf-soft);justify-content:center;align-items:center}
+.gtbl th{background:var(--leaf);color:#fff;padding:7px 10px;text-align:left;font-size:16px}
+.gtbl th:first-child{border-radius:14px 0 0 0}.gtbl th:last-child{border-radius:0 14px 0 0}
+.gtbl td{padding:6px 10px;border-bottom:1px solid var(--line);background:#fff;font-size:16px}
+.togs .btn{font-size:15px;padding:7px 12px}
+.reveal-box{display:none;margin-top:8px}
+.reveal-box.show{display:block}
+
+/* ===== Fruits ===== */
+.fruits{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.fbtn{background:#fff;border:3px solid var(--line);border-radius:20px;padding:8px 4px;text-align:center;font-weight:800;font-size:15px;transition:.15s}
+.fbtn:hover{border-color:var(--petal)}
+.fbtn.on{border-color:var(--petal);background:var(--petal-soft)}
+.fbtn .e{font-size:42px;line-height:1.1;display:block}
+.fsvg svg{width:100%;height:auto;display:block;max-height:calc(100vh - 450px)}
+.fstat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.fstat div{background:var(--leaf-soft);border-radius:14px;padding:6px 10px;font-size:15px}
+.fstat b{display:block;font-size:20px;color:var(--leaf-d)}
+
+/* ===== Cycle ===== */
+.cyc svg{width:100%;height:auto;display:block;max-height:calc(100vh - 310px)}
+.cards{display:flex;flex-wrap:wrap;gap:8px}
+.ccard{background:#fff;border:3px solid var(--line);border-radius:18px;padding:8px 12px;font-weight:800;font-size:17px;cursor:pointer;transition:.15s;user-select:none}
+.ccard:hover{border-color:var(--leaf)}
+.ccard.picked{border-color:var(--sun);background:var(--sun-soft);box-shadow:0 0 0 4px rgba(255,204,51,.35)}
+.ccard.used{display:none}
+.shake{animation:shake .45s}
+@keyframes shake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.slot{cursor:pointer}
+.cond{font-size:16px}
+.cond div{margin:4px 0;padding:6px 10px;border-radius:12px;background:var(--leaf-soft)}
+
+/* ===== Quiz ===== */
+.quiz-q{font-weight:800;font-size:30px;margin:8px 0 16px;color:var(--leaf-d)}
+.quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.qopt{display:flex;align-items:center;gap:14px;text-align:left;padding:16px 20px;border-radius:24px;border:3px solid var(--line);background:#fff;font-weight:700;font-size:22px;transition:.15s;box-shadow:var(--shadow)}
+.qopt:hover{border-color:var(--leaf);transform:translateY(-2px)}
+.qopt .k{width:44px;height:44px;flex:none;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+.qopt:nth-child(1) .k{background:var(--leaf)}.qopt:nth-child(2) .k{background:var(--petal)}
+.qopt:nth-child(3) .k{background:var(--sky)}.qopt:nth-child(4) .k{background:var(--sun-d)}
+.qopt.right{background:#d8f7e4;border-color:var(--green)}
+.qopt.wrong{background:#ffe0e0;border-color:var(--red)}
+.qopt[disabled]{cursor:default;transform:none}
+.qbar{display:flex;gap:6px;margin-bottom:10px}
+.qbar i{flex:1;height:10px;border-radius:99px;background:#d7ead3}
+.qbar i.ok{background:var(--green)}.qbar i.no{background:var(--red)}.qbar i.cur{background:var(--petal)}
+.result{text-align:center;padding:30px}
+.result .bigstars{font-size:64px;letter-spacing:6px}
+.lights{display:flex;gap:10px}
+.light{flex:1;border:3px solid var(--line);background:#fff;border-radius:20px;padding:8px;text-align:center;font-weight:800;font-size:15px}
+.light .e{font-size:34px}
+.light.on{border-color:var(--leaf);background:var(--leaf-soft);transform:scale(1.03)}
+.light .n{font-size:22px;color:var(--leaf-d)}
+.obs th{background:var(--leaf);color:#fff;font-size:15px;padding:6px}
+.obs th:first-child{border-radius:12px 0 0 0;text-align:left}.obs th:last-child{border-radius:0 12px 0 0}
+.obs td{border-bottom:1px solid var(--line);font-size:15px;padding:0;background:#fff}
+.obs td:first-child{padding:6px 8px;font-weight:800;background:#f6fbf4;white-space:nowrap}
+.obs td div{min-height:30px;padding:5px;outline:none;text-align:center}
+.obs td div:focus{background:#fffef2}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
+
+@media (max-height:900px){
+  body{font-size:17px}
+  h2{font-size:28px}
+  .sub{font-size:16px;margin-bottom:8px}
+  .card{padding:12px 16px}
+  .riddle{font-size:20px}
+  .kwl td div{min-height:210px}
+  .note{padding:8px 12px;margin-top:8px}
+  .def{padding:6px 10px;margin:5px 0;font-size:15px}
+  .oinfo{font-size:16px;min-height:90px}.oinfo .t{font-size:32px}
+  .fbtn .e{font-size:34px}
+  .ccard{font-size:15px;padding:6px 10px}
+  .quiz-q{font-size:25px;margin:4px 0 10px}
+  .qopt{padding:12px 16px;font-size:19px}
+  .goals li{margin:5px 0;padding:6px 10px 6px 38px}
+}
+@media (max-width:900px){
+  body{font-size:17px}
+  .grid2,.quiz-opts,.fruits{grid-template-columns:1fr 1fr !important}
+  .brand .t{display:none}
+  .dots{display:none}
+}
+</style>
+</head>
+<body>
+<svg class="vine l" viewBox="0 0 180 180"><path d="M10 0 C40 40 20 80 60 110 S120 150 170 170" fill="none" stroke="#2b8a35" stroke-width="4"/><g fill="#3fae49"><ellipse cx="30" cy="40" rx="14" ry="7" transform="rotate(40 30 40)"/><ellipse cx="48" cy="95" rx="14" ry="7" transform="rotate(-20 48 95)"/><ellipse cx="100" cy="135" rx="14" ry="7" transform="rotate(30 100 135)"/></g><circle cx="140" cy="158" r="8" fill="#ff6fa3"/><circle cx="140" cy="158" r="3" fill="#ffcc33"/></svg>
+<svg class="vine r" viewBox="0 0 180 180"><path d="M10 0 C40 40 20 80 60 110 S120 150 170 170" fill="none" stroke="#2b8a35" stroke-width="4"/><g fill="#3fae49"><ellipse cx="30" cy="40" rx="14" ry="7" transform="rotate(40 30 40)"/><ellipse cx="48" cy="95" rx="14" ry="7" transform="rotate(-20 48 95)"/><ellipse cx="100" cy="135" rx="14" ry="7" transform="rotate(30 100 135)"/></g><circle cx="140" cy="158" r="8" fill="#ffcc33"/><circle cx="140" cy="158" r="3" fill="#ff6fa3"/></svg>
+<div class="petals" id="petals"></div>
+
+<header class="top">
+  <div class="brand"><span class="fl">🌷</span><span class="t">Хүн байгаль · 5-р анги</span></div>
+  <div class="stage"><span class="stage-name" id="stageName"></span></div>
+  <div class="timer" id="timer" title="Хичээлийн үлдсэн хугацаа (2 удаа дарвал 40:00 болно)">⏱ <span id="tval">40:00</span></div>
+  <button class="tbtn" id="tPlay">▶ Эхлэх</button>
+  <div class="music" id="music" title="Би цэцэг — дэвсгэр дуу (M)"><button class="tbtn" id="musicBtn">🎵 Дуу<span class="eq"><i></i><i></i><i></i></span></button><input type="range" id="vol" min="0" max="1" step="0.05" value="0.3" aria-label="Дууны чанга"></div>
+  <button class="tbtn" id="notesBtn" title="Багшийн тэмдэглэл (N)">📝 Багшид</button>
+  <button class="tbtn" id="fsBtn" title="Бүтэн дэлгэц (F)">⛶</button>
+</header>
+<div class="progress" id="progress"></div>
+
+<main class="deck">
+
+<!-- 0. Танилцуулга -->
+<section class="slide" data-name="Танилцуулга" data-min="1"
+  data-notes="Хүүхдүүдтэй мэндэлж, өөрийгөө танилцуулна.|Дээд талын ▶ Эхлэх товчоор 40 минутын цагийг эхлүүлнэ.|🎵 “Би цэцэг” дуу эхний товшилтоор эхэлж, хичээлийн турш ард тоглоно. 🎵 товч (эсвэл M) — зогсоох/үргэлжлүүлэх, гулсуур — чанга сул.">
+  <div class="inner intro">
+    <div class="sign">
+      <div class="flowers"><span>🌱</span><span>🌿</span><span>🌷</span><span>🐝</span><span>🍎</span></div>
+      <div class="school">🏫 1-р сургууль</div>
+      <div class="subject">Хүн байгаль</div>
+      <div class="topic">🌸 Цэцэгт ургамлын амьдралын эргэлт</div>
+      <div class="teacher">👩‍🏫 Багш: В. Гэрэлтуяа</div>
+    </div>
+  </div>
+</section>
+
+<!-- 1. Оньсого ба бичлэг -->
+<section class="slide" data-name="Оньсого: Үрийн аялал" data-min="3"
+  data-notes="Оньсогыг уншиж таалгасны дараа “Хариу” товчийг дарна.|“Үрийн аялал” бичлэгийг (≈46 сек) үзүүлнэ.|Асуулт: Үр юунаас эхлээд юу болсон бэ? Төгсгөлд нь юу болсон бэ?">
+  <div class="inner">
+    <h2>🤔 Би хэн бэ?</h2>
+    <p class="sub">Оньсогыг таагаад, бичлэгээс жижиг үр хэрхэн ургамал болохыг ажиглаарай.</p>
+    <div class="grid2" style="grid-template-columns:.62fr 1.38fr">
+      <div class="card">
+        <h3>🧩 Оньсого</h3>
+        <p class="riddle">Нартай хамт эргэдэг,<br>Шар толгойтой,<br>Дотроо олон үртэй.<br><span class="muted" style="font-size:18px">Энэ юу вэ?</span></p>
+        <button class="btn" onclick="this.nextElementSibling.classList.add('show');confetti(60)">Хариу 👀</button>
+        <div class="reveal">🌻 Наранцэцэг!</div>
+      </div>
+      <div class="vid" id="vid1"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. KWL -->
+<section class="slide" data-name="Бид юу мэдэх вэ?" data-min="2"
+  data-notes="Сурагчдын хэлсэн санааг хоёр баганад шууд бичнэ. 4-р ангид үзсэн “Ургамлын эрхтэн” сэдвийг сануулна.|“Шинээр мэдэж авлаа” баганыг хичээлийн төгсгөлд бөглөнө.">
+  <div class="inner">
+    <h2>🧠 Ургамлын талаар бид юу мэдэх вэ?</h2>
+    <p class="sub">Нүдэн дээр дарж санаагаа бичээрэй. Хичээлийн төгсгөлд юу шинээр сурснаа бичнэ шүү! 🌟</p>
+    <table class="kwl two">
+      <tr><th>✅ Би мэднэ</th><th>❓ Мэдэхийг хүсэж байна</th></tr>
+      <tr>
+        <td><div contenteditable="true" data-k="ch7_kwl1" data-ph="Жишээ нь: Ургамалд ус, нарны гэрэл хэрэгтэй…"></div></td>
+        <td><div contenteditable="true" data-k="ch7_kwl2" data-ph="Жишээ нь: Үр яаж соёолдог вэ?"></div></td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- 3. Сэдэв -->
+<section class="slide" data-name="Цэцэгт ургамлын амьдралын эргэлт" data-min="1"
+  data-notes="Сэдвээ зарлаж, зорилгыг хамт уншина.">
+  <div class="inner grid2" style="align-items:center;min-height:calc(100vh - 240px)">
+    <div>
+      <h1>Цэцэгт ургамлын<br>амьдралын эргэлт</h1>
+      <p style="font-size:44px;margin:0">🌰 ➜ 🌱 ➜ 🌿 ➜ 🌷 ➜ 🐝 ➜ 🍎</p>
+    </div>
+    <div class="card">
+      <h3>🎯 Өнөөдөр бид:</h3>
+      <ul class="goals">
+        <li>Цэцэг, жимсний <b>үүргийг</b> мэднэ</li>
+        <li>Үр <b>соёолох</b> нөхцөлийг туршина</li>
+        <li>Ургамлын <b>өсөлтөд</b> юу нөлөөлөхийг ажиглана</li>
+        <li>Цэцэгт ургамлын <b>амьдралын эргэлтийг</b> бүтээнэ</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Эрхтэн -->
+<section class="slide" data-name="Ургамлын эрхтэн, цэцэг жимсний үүрэг" data-min="4"
+  data-notes="Сурах бичгийн х.63, 66. Ургамлын хэсэг бүр дээр дарж үүргийг нь уншина.|Гол санаа: Цэцгийн үүрэг — үр, жимс бий болгох. Жимсний үүрэг — үрийг хамгаалах, бусад амьтны хоол тэжээл болох.|Үндэс, иш, навч, цэцэг гэсэн эрхтэнтэй ургамлыг цэцэгт ургамал гэнэ.">
+  <div class="inner">
+    <h2>🌷 Ургамлын хэсэг бүр ямар үүрэгтэй вэ?</h2>
+    <div class="grid2" style="grid-template-columns:1fr 1fr;align-items:start">
+      <div class="card organ"><svg id="plantSvg" viewBox="0 0 420 420"></svg></div>
+      <div>
+        <div class="card oinfo" id="oInfo"><div class="t">👆 Дараарай!</div>Ургамлын хэсэг бүр дээр дарж, ямар үүрэгтэйг нь мэдээрэй.</div>
+        <div class="def" style="margin-top:12px">🌸 <b>Цэцгийн үүрэг:</b> үр, жимс бий болгоно.</div>
+        <div class="def">🍎 <b>Жимсний үүрэг:</b> үрийг гадны нөлөөнөөс хамгаална. Бусад амьд биеийн хоол тэжээл болно.</div>
+        <div class="row" style="margin-top:6px"><span class="score">⭐ Нээсэн: <span id="oCount">0</span>/6</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Үр соёолох -->
+<section class="slide" data-name="Үр соёолох гэж юу вэ?" data-min="7"
+  data-notes="Сурах бичгийн х.64-ийн туршилт: шар таваг — бага зэрэг чийглэг, цэнхэр — үр усанд живсэн, улаан — усгүй.|“▶ 7 хоног” товч дарж үр дүнг ажиглана. Дараа нь “Хүйтэн” нөхцөлийг сонгож давтана.|Үрээс үндэс анх гарахыг соёолох гэнэ. Соёолоход ус, агаар, дулаан чухал.">
+  <div class="inner">
+    <h2>🌱 Үр соёолоход юу хэрэгтэй вэ?</h2>
+    <div class="grid2" style="grid-template-columns:1.25fr .75fr;align-items:start">
+      <div class="cbox">
+        <canvas id="germ" width="900" height="440"></canvas>
+        <div class="ctrl">
+          <button class="btn" id="gPlay">▶ 7 хоног</button>
+          <input type="range" id="gDay" min="0" max="7" step="0.05" value="0" style="flex:1;min-width:140px;accent-color:#3fae49" aria-label="Өдөр">
+          <button class="btn ghost sm on" id="gWarm">🌡️ Дулаан</button>
+          <button class="btn ghost sm" id="gCold">❄️ Хүйтэн</button>
+        </div>
+      </div>
+      <div class="card">
+        <table class="gtbl"><tr><th>Таваг</th><th>Ус</th><th>Соёолсон</th></tr>
+          <tr><td>🟡 Шар</td><td>Бага зэрэг чийглэг</td><td id="gc0">0/10</td></tr>
+          <tr><td>🔵 Цэнхэр</td><td>Үр усанд живсэн</td><td id="gc1">0/10</td></tr>
+          <tr><td>🔴 Улаан</td><td>Усгүй</td><td id="gc2">0/10</td></tr></table>
+        <div class="feedback" id="gFb" style="font-size:17px"></div>
+        <button class="btn pink sm" onclick="document.getElementById('gRev').classList.add('show')">💡 Дүгнэлт</button>
+        <div class="reveal-box def" id="gRev">Үр соёолоход <b>💧 ус</b>, <b>💨 агаар</b>, <b>🌡️ дулаан</b> чухал. Үрээс <b>үндэс</b> анх гарахыг соёолох гэнэ.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Өсөлт -->
+<section class="slide" data-name="Ургамлын өсөлтөд юу нөлөөлөх вэ?" data-min="5"
+  data-notes="Сурах бичгийн х.65-ын хайрцагтай туршилт. Нөхцөлүүдийг асааж унтрааж, “▶ 14 хоног” товчоор ургуулна.|Гэрэл хажуугаас тусахад ургамал гэрэл рүү тэмүүлдэг. Гэрэлгүй бол цайвар, сул, сунасан болно.|Асуулт: Ургамалд ус, дулаан, агаараас гадна юу хэрэгтэй вэ? (гэрэл, шимтэй хөрс)">
+  <div class="inner">
+    <h2>🌿 Ургамал өсөхөд юу хэрэгтэй вэ?</h2>
+    <div class="grid2" style="grid-template-columns:1.2fr .8fr;align-items:start">
+      <div class="cbox">
+        <canvas id="grow" width="900" height="460"></canvas>
+        <div class="ctrl">
+          <button class="btn" id="wPlay">▶ 14 хоног</button>
+          <input type="range" id="wDay" min="0" max="14" step="0.05" value="0" style="flex:1;min-width:140px;accent-color:#3fae49" aria-label="Өдөр">
+          <span id="wDayV" style="font-weight:800;min-width:70px">0 хоног</span>
+        </div>
+      </div>
+      <div class="card togs">
+        <b>☀️ Гэрэл</b>
+        <div class="row" style="margin:4px 0 8px"><button class="btn ghost on" data-li="top">Дээрээс</button><button class="btn ghost" data-li="side">Хажуугаас</button><button class="btn ghost" data-li="none">Харанхуй</button></div>
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn ghost on" data-c="water">💧 Ус</button>
+          <button class="btn ghost on" data-c="warm">🌡️ Дулаан</button>
+          <button class="btn ghost on" data-c="soil">🟫 Шимтэй хөрс</button>
+        </div>
+        <div class="def" id="wStat" style="font-size:17px;min-height:70px">Нөхцөлөө сонгоод ургуулж үзээрэй!</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Үр, жимс -->
+<section class="slide" data-name="Боловсорсон үр, жимс" data-min="4"
+  data-notes="Сурах бичгийн х.67. Жимс бүр дээр дарж, огтлолыг нь харж үрийг ажиглана.|Үрийн тоо нь ойролцоо утга.|Ургал үржил: зарим ургамлыг иш, мөчир, навчаар нь үржүүлж болно (х.68).">
+  <div class="inner">
+    <h2>🍎 Жимс дотор хэдэн үр байдаг вэ?</h2>
+    <div class="grid2" style="grid-template-columns:1fr 1fr;align-items:start">
+      <div>
+        <div class="fruits" id="fruits"></div>
+        <div class="card" style="margin-top:12px">
+          <b>1. Аль жимс ганц үртэй вэ?</b>
+          <div class="row" style="margin:4px 0 8px" data-fq="sea"><button class="btn ghost sm">🍎 Алим</button><button class="btn ghost sm" data-ok="1">🟠 Чацаргана</button><button class="btn ghost sm">🍅 Улаан лооль</button></div>
+          <b>2. Аль жимс үрээ гадна талдаа гаргасан байдаг вэ?</b>
+          <div class="row" style="margin-top:4px" data-fq="str"><button class="btn ghost sm">🍊 Жүрж</button><button class="btn ghost sm" data-ok="1">🍓 Гүзээлзгэнэ</button><button class="btn ghost sm">🍎 Алим</button></div>
+          <div class="feedback" id="fqFb"></div>
+        </div>
+      </div>
+      <div class="card fsvg">
+        <svg id="fSvg" viewBox="0 0 400 300"></svg>
+        <div class="fstat"><div>Нэр<b id="fN">—</b></div><div>Үрийн тоо<b id="fC">—</b></div><div>Үрийн хэмжээ<b id="fS">—</b></div></div>
+        <div class="def" style="font-size:15px;margin-top:8px">🌿 <b>Ургал үржил:</b> Удамбар, шимтэглэй зэрэг ургамлыг иш, мөчир, навчаар нь ч үржүүлж болно.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Амьдралын эргэлт -->
+<section class="slide" data-name="Амьдралын эргэлтийг бүтээе" data-min="5"
+  data-notes="Сурах бичгийн х.69, 71-ийн бүдүүвч. Картыг дараад, тойргийн зөв байрлал дээр дарж байрлуулна.|Бүгдийг зөв байрлуулсны дараа үе шат бүрт хэрэгтэй нөхцөл гарна.">
+  <div class="inner">
+    <h2>♻️ Цэцэгт ургамлын амьдралын эргэлт</h2>
+    <p class="sub">Картыг дараад, тойрог дээрх зөв байрлал дээр дараарай. “Үр соёолох”-оос эхэлж цагийн зүүний дагуу!</p>
+    <div class="grid2" style="grid-template-columns:1.05fr .95fr;align-items:start">
+      <div class="card cyc"><svg id="cycSvg" viewBox="0 0 460 420"></svg></div>
+      <div>
+        <div class="card"><div class="cards" id="cCards"></div><div class="feedback" id="cFb"></div></div>
+        <div class="card cond" id="cCond" style="margin-top:12px;display:none">
+          <b>🌤️ Үе шат бүрт юу хэрэгтэй вэ?</b>
+          <div>🌱 <b>Үр соёолох:</b> агаар, ус чийг, дулаан</div>
+          <div>🌿 <b>Ургамал ургах:</b> агаар, ус чийг, дулаан, гэрэл, хөрс</div>
+          <div>🌷 <b>Бие гүйцэх:</b> үндэс, иш, навч, цэцэг</div>
+          <div>🍎 <b>Үр, жимс боловсрох:</b> тоос хүртэлт, үр тогтолт</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9. Тест -->
+<section class="slide" data-name="Шалгацгаая!" data-min="4"
+  data-notes="Асуулт бүрийг ангиараа уншаад, гараа өргөж хариулсны дараа сонголтыг дарна.">
+  <div class="inner" id="quiz"></div>
+</section>
+
+<!-- 10. Шинээр -->
+<section class="slide" data-name="Шинээр юу мэдэж авсан бэ?" data-min="2"
+  data-notes="Хичээлийн эхэнд бичсэн 2 баганыг ангиараа уншина.|Шинээр сурсан зүйлийг сүүлийн баганад бичнэ.">
+  <div class="inner">
+    <h2>🌟 Бид шинээр юу мэдэж авсан бэ?</h2>
+    <p class="sub">Эхэнд юу мэддэг, юу мэдэхийг хүсэж байснаа санацгаая. Одоо шинээр юу сурснаа <b>ягаан баганад</b> бичээрэй.</p>
+    <table class="kwl end">
+      <tr><th>✅ Би мэднэ</th><th>❓ Мэдэхийг хүсэж байна</th><th>🌟 Шинээр мэдэж авлаа</th></tr>
+      <tr>
+        <td><div class="ro" data-mirror="ch7_kwl1"></div></td>
+        <td><div class="ro" data-mirror="ch7_kwl2"></div></td>
+        <td><div contenteditable="true" data-k="ch7_kwl3" data-ph="Жишээ нь: Үр соёолоход ус, агаар, дулаан хэрэгтэй…"></div></td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- 11. Дүгнэлт -->
+<section class="slide" data-name="Дүгнэлт ба гэрийн даалгавар" data-min="2"
+  data-notes="Гол санааг давтана.|Гэрлэн дохиогоор өөрийгөө үнэлнэ.|Гэрийн даалгавар: сурах бичгийн х.70 — анги, сургууль, гэр, гудамжныхаа ургамлыг тоолж хүснэгтэд тэмдэглэнэ.">
+  <div class="inner">
+    <h2>🎉 Бид өнөөдөр юу сурсан бэ?</h2>
+    <div class="grid2" style="grid-template-columns:.9fr 1.1fr">
+      <div class="card">
+        <ul class="goals">
+          <li>🌸 Цэцэг — үр, жимс бий болгоно</li>
+          <li>🌱 Соёолоход: ус, агаар, дулаан</li>
+          <li>🌿 Өсөхөд: + гэрэл, шимтэй хөрс</li>
+          <li>♻️ Үр → ургамал → цэцэг → тоос хүртэх → үр, жимс</li>
+        </ul>
+        <div class="lights" style="margin-top:10px">
+          <button class="light" data-l="g"><div class="e">🟢</div>Ойлгосон<div class="n">0</div></button>
+          <button class="light" data-l="y"><div class="e">🟡</div>Бага зэрэг<div class="n">0</div></button>
+          <button class="light" data-l="r"><div class="e">🔴</div>Тусламж<div class="n">0</div></button>
+        </div>
+        <button class="btn ghost sm" id="lReset" style="margin-top:8px">↺ Тэглэх</button>
+      </div>
+      <div class="card">
+        <b>🏠 Гэрийн даалгавар — Бидний ногоон орчин</b>
+        <table class="obs" id="obs" style="margin-top:6px"></table>
+        <p style="font-family:var(--tfont);font-size:30px;text-align:center;margin:10px 0 0;color:var(--leaf-d)">Ургамлаа хайрлан хамгаалъя! 🌳💚</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<nav class="nav">
+  <button class="btn" id="prevBtn">◀ Өмнөх</button>
+  <div class="dots" id="dots"></div>
+  <button class="btn" id="nextBtn">Дараах ▶</button>
+</nav>
+<div class="tnotes" id="tnotes"><h4>📝 Багшид зориулсан зөвлөмж</h4><ul id="tnList"></ul></div>
+<canvas id="confetti"></canvas>
+<audio id="bgm" loop preload="auto"></audio>
+
+<script>
+/* ---------- Helpers ---------- */
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const shuffle=a=>[...a].sort(()=>Math.random()-.5);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));const clamp01=v=>clamp(v,0,1);
+const ease=k=>k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+const kwlMem={};const videos=[];
+const SVGNS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent,text){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e}
+(()=>{const p=$('petals');for(let i=0;i<14;i++){const s=document.createElement('span');s.style.cssText=`left:${rnd(0,100)}%;animation-duration:${rnd(14,26)}s;animation-delay:${-rnd(0,26)}s`;p.appendChild(s)}})();
+
+/* ---------- Slides ---------- */
+const slides=[...document.querySelectorAll('.slide')];const dots=$('dots');let cur=0;
+slides.forEach((s,i)=>{const b=document.createElement('button');b.className='dot';b.textContent=i+1;b.title=s.dataset.name;b.onclick=()=>go(i);dots.appendChild(b)});
+function go(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,j)=>s.classList.toggle('active',j===cur));
+  [...dots.children].forEach((d,j)=>{d.classList.toggle('on',j===cur);d.classList.toggle('done',j<cur)});
+  const s=slides[cur];
+  $('stageName').textContent=(cur+1)+'. '+s.dataset.name;
+  $('progress').style.width=((cur+1)/slides.length*100)+'%';
+  $('tnList').innerHTML='<li>⏱ Зөвлөмж хугацаа: ≈'+s.dataset.min+' мин</li>'+s.dataset.notes.split('|').map(t=>'<li>'+t+'</li>').join('');
+  $('prevBtn').disabled=cur===0;$('nextBtn').textContent=cur===slides.length-1?'🏁 Төгсгөл':'Дараах ▶';
+  s.querySelectorAll('[data-mirror]').forEach(m=>m.textContent=kwlMem[m.dataset.mirror]||'');
+  videos.forEach(v=>{if(!s.contains(v.el))v.pause()});
+}
+$('prevBtn').onclick=()=>go(cur-1);$('nextBtn').onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{
+  if(e.target.isContentEditable||e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowRight'||e.key==='PageDown')go(cur+1);
+  else if(e.key==='ArrowLeft'||e.key==='PageUp')go(cur-1);
+  else if(e.key==='f'||e.key==='F')toggleFS();
+  else if(e.key==='n'||e.key==='N')toggleNotes();
+  else if(e.key==='m'||e.key==='M')musicToggle();
+});
+function toggleFS(){if(!document.fullscreenElement)document.documentElement.requestFullscreen?.();else document.exitFullscreen?.()}
+function toggleNotes(){$('tnotes').classList.toggle('show')}
+$('fsBtn').onclick=toggleFS;$('notesBtn').onclick=toggleNotes;
+const isActive=e=>slides[cur].contains(e);
+
+/* ---------- Background music ---------- */
+const bgm=$('bgm'),musicEl=$('music'),vol=$('vol');
+bgm.src=encodeURI('Би цэцэг Bi tsetseg (1).mp3');
+vol.value=store.get('ch7-vol')||'0.3';bgm.volume=+vol.value;
+let musicWanted=store.get('ch7-music')!=='off';
+function musicUI(){musicEl.classList.toggle('on',!bgm.paused)}
+function musicPlay(){bgm.play().then(musicUI).catch(()=>{})}
+function musicToggle(){if(bgm.paused){musicWanted=true;musicPlay()}else{musicWanted=false;bgm.pause();musicUI()}store.set('ch7-music',musicWanted?'on':'off')}
+$('musicBtn').onclick=e=>{e.stopPropagation();musicToggle()};
+vol.oninput=()=>{bgm.volume=+vol.value;store.set('ch7-vol',vol.value)};
+bgm.onerror=()=>{musicEl.style.opacity=.45;musicEl.title='Дууны файл олдсонгүй: HTML файлтай нэг фолдерт байх ёстой'};
+// Хөтөч эхний товшилтын дараа л дуу тоглуулахыг зөвшөөрдөг
+const firstGesture=e=>{if(e.target&&e.target.closest&&e.target.closest('#music'))return;if(musicWanted&&bgm.paused)musicPlay();removeEventListener('pointerdown',firstGesture,true);removeEventListener('keydown',firstGesture,true)};
+addEventListener('pointerdown',firstGesture,true);addEventListener('keydown',firstGesture,true);
+musicPlay();
+
+/* ---------- Timer ---------- */
+let remain=40*60,running=false,tick=null;
+function drawT(){const a=Math.abs(remain),m=Math.floor(a/60),s=a%60;$('tval').textContent=(remain<0?'+':'')+m+':'+String(s).padStart(2,'0');$('timer').className='timer'+(remain<0?' over':remain<=300?' warn':'')}
+$('tPlay').onclick=()=>{running=!running;$('tPlay').textContent=running?'⏸ Зогсоох':'▶ Үргэлжлүүлэх';if(running)tick=setInterval(()=>{remain--;drawT()},1000);else clearInterval(tick)};
+$('timer').ondblclick=()=>{remain=40*60;drawT()};drawT();
+
+/* ---------- KWL ---------- */
+document.querySelectorAll('[data-k]').forEach(e=>{const k=e.dataset.k;kwlMem[k]=store.get(k)||'';e.textContent=kwlMem[k];e.addEventListener('input',()=>{kwlMem[k]=e.innerText;store.set(k,kwlMem[k])})});
+
+/* ================= Drawing helpers ================= */
+const VW=1280,VH=720;
+function emoji(c,e,x,y,size){c.save();c.font=`${size}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(e,x,y);c.restore()}
+function txt(c,t,x,y,size,color,stroke='#fff'){c.save();c.font=`800 ${size}px "Montserrat", sans-serif`;c.textAlign='center';c.textBaseline='middle';c.lineWidth=size/5;c.strokeStyle=stroke;c.strokeText(t,x,y);c.fillStyle=color;c.fillText(t,x,y);c.restore()}
+function skyG(c,W,H,top,bot){const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,top);g.addColorStop(1,bot);c.fillStyle=g;c.fillRect(0,0,W,H)}
+function sunD(c,x,y,r,T){c.save();c.translate(x,y);c.rotate(T*.3);c.strokeStyle='#ffc21a';c.lineWidth=r*.12;c.lineCap='round';for(let i=0;i<12;i++){c.rotate(Math.PI/6);c.beginPath();c.moveTo(r*1.2,0);c.lineTo(r*1.55,0);c.stroke()}c.restore();
+  const g=c.createRadialGradient(x-r*.3,y-r*.3,2,x,y,r);g.addColorStop(0,'#fff6b0');g.addColorStop(1,'#ffc21a');c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,7);c.fill()}
+function soilD(c,W,H,y){const g=c.createLinearGradient(0,y,0,H);g.addColorStop(0,'#9b6a3a');g.addColorStop(1,'#6b4420');c.fillStyle=g;c.fillRect(0,y,W,H-y);c.fillStyle='#5aa84a';c.fillRect(0,y-8,W,10);
+  c.fillStyle='rgba(60,35,15,.4)';for(let i=0;i<60;i++){c.beginPath();c.arc((i*97)%W,y+20+((i*53)%(H-y-20)),3,0,7);c.fill()}}
+function seedD(c,x,y,s,faceOn){c.save();c.fillStyle='#c8955a';c.strokeStyle='#8b5a2b';c.lineWidth=Math.max(1,s*.06);c.beginPath();c.ellipse(x,y,s*.6,s*.42,-.3,0,7);c.fill();c.stroke();
+  if(faceOn){c.fillStyle='#3a2410';c.beginPath();c.arc(x-s*.18,y-s*.05,s*.05,0,7);c.arc(x+s*.18,y-s*.05,s*.05,0,7);c.fill();c.strokeStyle='#3a2410';c.lineWidth=s*.04;c.beginPath();c.arc(x,y+s*.03,s*.13,.2*Math.PI,.8*Math.PI);c.stroke()}c.restore()}
+function leaf(c,x,y,len,ang,col='#3fae49'){c.save();c.translate(x,y);c.rotate(ang);c.fillStyle=col;c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(len*.5,-len*.35,len,0);c.quadraticCurveTo(len*.5,len*.35,0,0);c.fill();
+  c.strokeStyle='rgba(0,0,0,.15)';c.lineWidth=1.5;c.beginPath();c.moveTo(0,0);c.lineTo(len*.9,0);c.stroke();c.restore()}
+function flowerD(c,x,y,r,open=1,col='#ff6fa3'){c.save();c.translate(x,y);for(let i=0;i<6;i++){c.rotate(Math.PI/3);c.fillStyle=col;c.beginPath();c.ellipse(r*.55*open,0,r*.5*open+2,r*.28*open+1,0,0,7);c.fill()}c.fillStyle='#ffcc33';c.beginPath();c.arc(0,0,r*.3,0,7);c.fill();c.restore()}
+function rootD(c,x,y,len,T){c.save();c.strokeStyle='#f3e6c8';c.lineWidth=4;c.lineCap='round';c.beginPath();c.moveTo(x,y);for(let i=1;i<=10;i++){c.lineTo(x+Math.sin(i*.9)*6,y+len*i/10)}c.stroke();
+  if(len>40){[[.4,-1],[.6,1],[.8,-1]].forEach(([f,s])=>{c.beginPath();c.moveTo(x,y+len*f);c.lineTo(x+s*len*.3,y+len*f+len*.2);c.stroke()})}c.restore()}
+
+/* ================= Video engine ================= */
+function vCaption(c,text,a=1){if(!text)return;c.save();c.globalAlpha=a;c.font='800 36px "Montserrat", sans-serif';
+  const w=c.measureText(text).width+70,h=72,x=(VW-w)/2,y=VH-h-22;c.fillStyle='rgba(255,255,255,.95)';c.beginPath();c.roundRect(x,y,w,h,36);c.fill();c.lineWidth=4;c.strokeStyle='#3fae49';c.stroke();
+  c.fillStyle='#1f3d28';c.textAlign='center';c.textBaseline='middle';c.fillText(text,VW/2,y+h/2+2);c.restore()}
+function makeVideo(elm,scenes,fileName){
+  elm.innerHTML=`<canvas width="${VW}" height="${VH}"></canvas><div class="vbar"><button class="pp">▶ Тоглуулах</button><button class="rs" title="Эхнээс нь">⏮</button><div class="vprog"><i></i></div><span class="vtime">0:00 / 0:00</span><button class="dl" title="Видео файл болгон татах">⬇ Татах</button><button class="fs" title="Томруулах">⛶</button></div>`;
+  const cv=elm.querySelector('canvas'),ctx=cv.getContext('2d'),pp=elm.querySelector('.pp'),bar=elm.querySelector('.vprog i'),tm=elm.querySelector('.vtime'),dl=elm.querySelector('.dl');
+  const total=scenes.reduce((a,s)=>a+s.d,0),starts=[];scenes.reduce((a,s)=>(starts.push(a),a+s.d),0);
+  const fmt=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');let t=0,playing=false,last=0,rec=null;
+  function render(){let i=scenes.length-1;for(let j=0;j<scenes.length;j++){if(t<starts[j]+scenes[j].d){i=j;break}}
+    const sc=scenes[i],lt=Math.min(sc.d,t-starts[i]),k=lt/sc.d;ctx.save();sc.draw(ctx,k,t,lt);ctx.restore();
+    vCaption(ctx,typeof sc.cap==='function'?sc.cap(k):sc.cap,Math.min(1,lt/.4));
+    const edge=Math.min(lt,sc.d-lt);if(edge<.3&&t>.05&&t<total-.05){ctx.fillStyle=`rgba(255,255,255,${(1-edge/.3)*.85})`;ctx.fillRect(0,0,VW,VH)}
+    bar.style.width=(t/total*100)+'%';tm.textContent=fmt(t)+' / '+fmt(total)}
+  function loop(ts){if(!playing)return;t+=Math.min(.1,(ts-last)/1000);last=ts;if(t>=total){t=total;render();pause();if(rec)rec.stop();return}render();requestAnimationFrame(loop)}
+  function play(){if(t>=total)t=0;playing=true;pp.textContent='⏸ Зогсоох';last=performance.now();requestAnimationFrame(loop)}
+  function pause(){playing=false;pp.textContent='▶ Тоглуулах'}
+  pp.onclick=()=>playing?pause():play();cv.onclick=()=>playing?pause():play();
+  elm.querySelector('.rs').onclick=()=>{t=0;render();if(!playing)play()};
+  elm.querySelector('.vprog').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();t=(e.clientX-r.left)/r.width*total;render()};
+  elm.querySelector('.fs').onclick=()=>{if(document.fullscreenElement)document.exitFullscreen();else elm.requestFullscreen?.()};
+  if(!(cv.captureStream&&window.MediaRecorder))dl.style.display='none';
+  dl.onclick=()=>{if(rec)return;const mime=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));const chunks=[];
+    rec=new MediaRecorder(cv.captureStream(30),mime?{mimeType:mime,videoBitsPerSecond:6e6}:undefined);rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+    rec.onstop=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(chunks,{type:'video/webm'}));a.download=fileName;document.body.appendChild(a);a.click();a.remove();rec=null;dl.textContent='⬇ Татах'};
+    dl.textContent='⏺ Бичиж байна…';rec.start();t=0;play()};
+  const api={el:elm,pause,render};videos.push(api);document.fonts?.ready.then(render);render();return api;
+}
+
+/* ---------- Video: Үрийн аялал ---------- */
+const GY=470;
+function vPlant(c,x,h,T,opts={}){const top=GY-h;c.strokeStyle='#2b8a35';c.lineWidth=Math.max(4,h*.04);c.lineCap='round';c.beginPath();c.moveTo(x,GY);c.quadraticCurveTo(x+Math.sin(T)*6,GY-h/2,x,top);c.stroke();
+  const n=Math.floor(h/60);for(let i=1;i<=n;i++){const y=GY-i*55;leaf(c,x,y,Math.min(70,h*.3),-.5,'#3fae49');leaf(c,x,y-20,Math.min(70,h*.3),Math.PI+.5,'#4cbf55')}
+  if(opts.flower)flowerD(c,x,top,46,opts.flower);if(opts.fruit){c.fillStyle='#e53935';c.beginPath();c.arc(x,top+10,40*opts.fruit,0,7);c.fill();c.fillStyle='#2b8a35';c.fillRect(x-3,top-35*opts.fruit,6,14)}}
+makeVideo($('vid1'),[
+  {d:6,cap:'Хөрсөн дотор нэгэн жижиг үр байна 🌰',draw(c,k,T){skyG(c,VW,VH,'#bfe6ff','#effaff');sunD(c,1100,120,70,T);soilD(c,VW,VH,GY);seedD(c,640,GY+90,90,true);txt(c,'zzz',720,GY+30+Math.sin(T*3)*6,30,'#6b4420')}},
+  {d:7,cap:k=>k<.5?'Бороо орж, нар дулаацууллаа 🌧️☀️':'Үр соёолж, эхлээд ҮНДЭС гарлаа!',draw(c,k,T){skyG(c,VW,VH,'#bfe6ff','#effaff');sunD(c,1100,120,70,T);
+    if(k<.6)for(let i=0;i<30;i++){const y=(i*41+T*400)%GY;c.strokeStyle='#4f8dff';c.lineWidth=3;c.beginPath();c.moveTo((i*97)%VW,y);c.lineTo((i*97)%VW-4,y+16);c.stroke()}
+    soilD(c,VW,VH,GY);const r=clamp01((k-.4)/.6);rootD(c,640,GY+110,r*110,T);seedD(c,640,GY+90,90+r*10,true)}},
+  {d:7,cap:'Нахиа гарч, анхны навч ургалаа 🌱',draw(c,k,T){skyG(c,VW,VH,'#bfe6ff','#effaff');sunD(c,1100,120,70,T);soilD(c,VW,VH,GY);rootD(c,640,GY+60,150,T);
+    const h=ease(k)*120;c.strokeStyle='#2b8a35';c.lineWidth=8;c.beginPath();c.moveTo(640,GY+60);c.lineTo(640,GY-h);c.stroke();leaf(c,640,GY-h,40+k*30,-.6);leaf(c,640,GY-h,40+k*30,Math.PI+.6)}},
+  {d:7,cap:k=>k<.5?'Ургамал ургаж томорлоо 🌿':'Бие гүйцэж, ЦЭЦЭГЛЭЛЭЭ 🌸',draw(c,k,T){skyG(c,VW,VH,'#a9dcff','#effaff');sunD(c,1100,120,70,T);soilD(c,VW,VH,GY);
+    vPlant(c,640,120+ease(clamp01(k*1.4))*200,T,{flower:clamp01((k-.5)*2.2)})}},
+  {d:7,cap:'Зөгий цэцгийн тоосыг зөөж, ТООС ХҮРТЭЭНЭ 🐝',draw(c,k,T){skyG(c,VW,VH,'#a9dcff','#effaff');sunD(c,1100,120,70,T);soilD(c,VW,VH,GY);vPlant(c,500,320,T,{flower:1});vPlant(c,800,280,T+1,{flower:1});
+    const bx=500+(800-500)*(.5-.5*Math.cos(k*Math.PI*2)),by=150-Math.sin(k*Math.PI*4)*40;emoji(c,'🐝',bx,by,70);for(let i=0;i<8;i++){c.fillStyle='#ffcc33';c.beginPath();c.arc(bx-20-i*12,by+20+Math.sin(i+T*6)*6,4,0,7);c.fill()}}},
+  {d:7,cap:k=>k<.5?'Цэцэг ЖИМС болж, дотор нь ҮР боловсорлоо 🍎':'Үр нь газарт унаж, дахин соёолно…',draw(c,k,T){skyG(c,VW,VH,'#a9dcff','#effaff');sunD(c,1100,120,70,T);soilD(c,VW,VH,GY);
+    const f=clamp01(k*2);vPlant(c,640,320,T,{flower:1-f,fruit:f});if(k>.5){const p=clamp01((k-.5)*2.2);for(let i=0;i<3;i++)seedD(c,600+i*40,150+p*(GY+30-150),26,false)}}},
+  {d:5,cap:'Ингээд амьдралын эргэлт дахин эхэлнэ ♻️',draw(c,k,T){skyG(c,VW,VH,'#e3f6e1','#ffffff');const R=210,cx=640,cy=330;
+    c.strokeStyle='#3fae49';c.lineWidth=8;c.setLineDash([20,14]);c.lineDashOffset=-T*40;c.beginPath();c.arc(cx,cy,R,0,7);c.stroke();c.setLineDash([]);
+    ['🌰','🌱','🌿','🌷','🐝','🍎'].forEach((e,i)=>{const a=-Math.PI/2+i*Math.PI/3;emoji(c,e,cx+Math.cos(a)*R,cy+Math.sin(a)*R,80)});txt(c,'♻️',cx,cy,90,'#2b8a35')}},
+],'Uriin_ayalal.webm');
+
+/* ================= Plant organs ================= */
+const ORG={root:['Үндэс','🟤','Хөрснөөс ус, шим тэжээл шимж авна. Ургамлыг газарт тогтооно.'],stem:['Иш','🟩','Ус, тэжээлийг үндэснээс навч, цэцэг рүү зөөнө. Навч, цэцгийг даана.'],
+  leaf:['Навч','🍃','Нарны гэрлийн тусламжтайгаар ургамлын хоол тэжээлийг бүтээнэ.'],flower:['Цэцэг','🌸','Үр, жимс бий болгоно. Зөгий, эрвээхэй тоосыг нь зөөнө.'],
+  fruit:['Жимс','🍎','Үрийг гадны нөлөөнөөс хамгаална. Бусад амьд биеийн хоол тэжээл болно.'],seed:['Үр','🌰','Тохиромжтой нөхцөлд соёолж, шинэ ургамал болно.']};
+const seen=new Set();
+(()=>{const s=$('plantSvg');el('rect',{x:0,y:300,width:420,height:120,fill:'#8b5a2b',rx:16},s);el('rect',{x:0,y:294,width:420,height:10,fill:'#5aa84a'},s);
+  const g=k=>{const gg=el('g',{class:'hs'},s);gg.onclick=()=>{const o=ORG[k];$('oInfo').innerHTML=`<div class="t">${o[1]} ${o[0]}</div>${o[2]}`;seen.add(k);$('oCount').textContent=seen.size;if(seen.size===6)confetti(80)};return gg};
+  const r=g('root');['M210 300 Q205 340 210 400','M210 320 Q180 345 160 380','M210 330 Q240 355 265 385','M208 360 Q190 375 180 400','M212 355 Q232 372 240 398'].forEach(d=>el('path',{d,stroke:'#f3e6c8','stroke-width':6,fill:'none','stroke-linecap':'round'},r));
+  const st=g('stem');el('path',{d:'M210 300 Q205 200 212 110',stroke:'#2b8a35','stroke-width':12,fill:'none','stroke-linecap':'round'},st);el('path',{d:'M209 190 Q260 170 290 150',stroke:'#2b8a35','stroke-width':7,fill:'none'},st);
+  const lf=g('leaf');[[208,250,-30],[208,215,210],[208,170,-40]].forEach(([x,y,a])=>el('path',{d:'M0 0 Q35 -24 75 0 Q35 24 0 0Z',fill:'#3fae49',transform:`translate(${x} ${y}) rotate(${a})`},lf));
+  const fl=g('flower');for(let i=0;i<6;i++)el('ellipse',{cx:212,cy:82,rx:26,ry:14,fill:'#ff6fa3',transform:`rotate(${i*60} 212 98) translate(0 0)`},fl);el('circle',{cx:212,cy:98,r:16,fill:'#ffcc33'},fl);
+  const fr=g('fruit');el('circle',{cx:300,cy:168,r:30,fill:'#e53935'},fr);el('rect',{x:297,y:132,width:6,height:10,fill:'#6b4420'},fr);el('path',{d:'M303 136 q14 -10 22 0 q-12 8 -22 0z',fill:'#3fae49'},fr);
+  const sd=g('seed');el('rect',{x:330,y:220,width:80,height:60,rx:14,fill:'#fff3e0',stroke:'#e0c49a'},sd);[[350,250],[370,245],[390,252]].forEach(([x,y])=>el('ellipse',{cx:x,cy:y,rx:8,ry:5,fill:'#8b5a2b'},sd));
+  [['Цэцэг',212,36],['Жимс',300,214],['Навч',100,212],['Иш',250,280],['Үндэс',300,370],['Үр',370,212]].forEach(([t,x,y])=>el('text',{x,y,'text-anchor':'middle','font-size':17,'font-weight':800,fill:'#1f3d28','pointer-events':'none'},s,t));
+})();
+
+/* ================= Germination ================= */
+const gc=$('germ'),gx=gc.getContext('2d');let gWarm=true,gPlaying=false;
+const PL=[{n:'Шар',col:'#ffd23f',w:'moist'},{n:'Цэнхэр',col:'#4f8dff',w:'flood'},{n:'Улаан',col:'#ff6b6b',w:'dry'}];
+const gSeeds=PL.map(()=>Array.from({length:10},(_,i)=>({x:rnd(-80,80),y:rnd(-34,34),r:rnd(0,6),u:Math.random()})));
+function sproutDay(p,s,i){if(p.w==='dry')return 99;if(p.w==='flood')return i===0?6.4:99;if(!gWarm)return i<1?6.6:99;return i===9?99:1.5+s.u*2.2}
+function gDraw(){const d=+$('gDay').value,c=gx;c.fillStyle='#f6fbf4';c.fillRect(0,0,900,440);
+  c.fillStyle=gWarm?'#fff3cf':'#e2f1ff';c.beginPath();c.roundRect(14,12,260,40,20);c.fill();c.fillStyle='#1f3d28';c.font='800 20px Montserrat,sans-serif';c.textAlign='left';c.fillText((gWarm?'🌡️ Дулаан':'❄️ Хүйтэн')+' · '+Math.floor(d)+'-р хоног',28,39);
+  const counts=[0,0,0];
+  PL.forEach((p,pi)=>{const cx=160+pi*290,cy=250;
+    c.fillStyle=p.col;c.beginPath();c.ellipse(cx,cy+8,130,70,0,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.ellipse(cx,cy,112,56,0,0,7);c.fill();
+    if(p.w!=='dry'){c.fillStyle=p.w==='flood'?'rgba(79,141,255,.55)':'rgba(120,180,255,.18)';c.beginPath();c.ellipse(cx,cy,110,54,0,0,7);c.fill()}
+    gSeeds[pi].forEach((s,i)=>{const sd=sproutDay(p,s,i),sw=p.w==='dry'?1:1+Math.min(d/2,1)*.25,x=cx+s.x,y=cy+s.y;
+      if(d>sd){counts[pi]++;const L=Math.min(36,(d-sd)*16);rootD(c,x,y+4,L,0);if(d>sd+1.2){const h=Math.min(22,(d-sd-1.2)*10);c.strokeStyle='#3fae49';c.lineWidth=3;c.beginPath();c.moveTo(x,y);c.lineTo(x,y-h);c.stroke();leaf(c,x,y-h,10,-.6);leaf(c,x,y-h,10,Math.PI+.6)}}
+      c.save();c.translate(x,y);c.rotate(s.r);c.scale(sw,sw);c.fillStyle='#d9a066';c.strokeStyle='#8b5a2b';c.lineWidth=1.2;c.beginPath();c.ellipse(0,0,8,5.5,0,0,7);c.fill();c.stroke();c.restore()});
+    c.textAlign='center';c.fillStyle='#1f3d28';c.font='800 20px Montserrat,sans-serif';c.fillText(p.n+' таваг',cx,cy-90);
+    c.font='600 16px Montserrat,sans-serif';c.fillStyle='#5c7564';c.fillText(['Бага зэрэг чийглэг','Усанд живсэн','Усгүй'][pi],cx,cy+105)});
+  counts.forEach((n,i)=>$('gc'+i).textContent=n+'/10');
+  if(d>=7){$('gFb').className='feedback ok';$('gFb').textContent=gWarm?'🌱 Шар таваг хамгийн олон соёоллоо! Ус, агаар, дулаан бүгд байсан.':'❄️ Хүйтэнд үр бараг соёолсонгүй — дулаан хэрэгтэй!'}else $('gFb').textContent='';
+}
+$('gDay').oninput=gDraw;
+$('gPlay').onclick=()=>{if(gPlaying)return;gPlaying=true;let d=0;const st=performance.now();(function f(now){d=Math.min(7,(now-st)/1000*1.2);$('gDay').value=d;gDraw();if(d<7&&isActive(gc))requestAnimationFrame(f);else gPlaying=false})(st)};
+$('gWarm').onclick=()=>{gWarm=true;$('gWarm').classList.add('on');$('gCold').classList.remove('on');$('gDay').value=0;gDraw()};
+$('gCold').onclick=()=>{gWarm=false;$('gCold').classList.add('on');$('gWarm').classList.remove('on');$('gDay').value=0;gDraw()};
+gDraw();
+
+/* ================= Growth ================= */
+const wc=$('grow'),wx=wc.getContext('2d');let W={light:'top',water:true,warm:true,soil:true},wPlaying=false;
+document.querySelectorAll('[data-li]').forEach(b=>b.onclick=()=>{W.light=b.dataset.li;document.querySelectorAll('[data-li]').forEach(x=>x.classList.toggle('on',x===b));wDraw()});
+document.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const k=b.dataset.c;W[k]=!W[k];b.classList.toggle('on',W[k]);wDraw()});
+function wDraw(){const d=+$('wDay').value,c=wx,Wd=900,H=460;$('wDayV').textContent=Math.floor(d)+' хоног';
+  skyG(c,Wd,H,W.light==='none'?'#3a3a48':'#e6f5ff',W.light==='none'?'#55556a':'#f6fbf4');
+  if(W.light==='top')sunD(c,450,60,40,d);
+  if(W.light==='side'){c.fillStyle='#bfe6ff';c.fillRect(780,90,100,160);c.strokeStyle='#8b5a2b';c.lineWidth=8;c.strokeRect(780,90,100,160);sunD(c,830,170,30,d);
+    c.strokeStyle='rgba(255,204,51,.6)';c.lineWidth=6;for(let i=0;i<4;i++){c.beginPath();c.moveTo(775,120+i*35);c.lineTo(600,160+i*45);c.stroke()}}
+  if(!W.warm){for(let i=0;i<8;i++)emoji(c,'❄️',60+i*110,40+(i%2)*40,30)}
+  // pot
+  c.fillStyle=W.soil?'#6b4420':'#c9a77a';c.beginPath();c.ellipse(450,330,120,22,0,0,7);c.fill();
+  c.fillStyle='#c8673a';c.beginPath();c.moveTo(330,330);c.lineTo(360,440);c.lineTo(540,440);c.lineTo(570,330);c.closePath();c.fill();c.fillStyle='#b05a30';c.fillRect(322,322,256,18);
+  if(W.water&&d>0){c.fillStyle='rgba(79,141,255,.25)';c.beginPath();c.ellipse(450,332,100,14,0,0,7);c.fill()}
+  // growth model
+  let rate=1,col='#3fae49',stemCol='#2b8a35',leafS=1,thin=1,droop=0;
+  if(!W.warm)rate*=.15;if(!W.soil){rate*=.6;col='#a8c95a'}
+  if(W.light==='none'){rate*=1.25;col='#e8e28a';stemCol='#cfc874';leafS=.45;thin=.5}
+  let eff=d;if(!W.water){eff=Math.min(d,4);droop=clamp01((d-4)/6);col=droop>.3?'#b9a35a':col}
+  const h=Math.min(260,eff*20*rate),bend=W.light==='side'?clamp01(h/200)*90:0;
+  const baseX=450,baseY=330,topX=baseX+bend,topY=baseY-h;
+  if(h>2){c.strokeStyle=stemCol;c.lineWidth=Math.max(3,7*thin);c.lineCap='round';c.beginPath();c.moveTo(baseX,baseY);c.quadraticCurveTo(baseX,baseY-h*.6,topX,topY+droop*h*.5);c.stroke();
+    const n=Math.floor(h/45);for(let i=1;i<=n;i++){const t=i/(n+1),x=baseX+(topX-baseX)*t*t,y=baseY-h*t+droop*h*.5*t*t;const L=(26+20*Math.min(1,h/150))*leafS;
+      leaf(c,x,y,L,-.4+droop*1.2,col);leaf(c,x,y-10,L,Math.PI+.4-droop*1.2,col)}
+    if(W.light!=='none'&&W.water&&W.warm&&W.soil&&d>11)flowerD(c,topX,topY,26,clamp01((d-11)/3))}
+  else if(d>0){c.fillStyle='#d9a066';c.beginPath();c.ellipse(baseX,baseY-4,9,6,0,0,7);c.fill()}
+  // status
+  let s='';if(d<.5)s='Нөхцөлөө сонгоод “▶ 14 хоног” дарж ургуулаарай!';
+  else if(!W.warm)s='❄️ Хүйтэнд ургамал маш удаан ургаж байна — <b>дулаан</b> хэрэгтэй.';
+  else if(!W.water&&d>5)s='🥀 Усгүй болохоор ургамал гандаж, навч нь унжиж байна — <b>ус</b> хэрэгтэй!';
+  else if(W.light==='none')s='🌑 Гэрэлгүй ургамал <b>цайвар, сул</b>, сунаж ургалаа. Навч нь жижиг — <b>гэрэл</b> хэрэгтэй!';
+  else if(W.light==='side')s='🪟 Ургамал <b>гэрэл рүү</b> тэмүүлж, цонх руу махийж ургалаа!';
+  else if(!W.soil)s='🟫 Шим тэжээл муутай хөрсөнд ургамал жижиг, навч нь шаравтар байна.';
+  else s=d>11?'🌸 Бүх нөхцөл хангагдсан тул ургамал эрүүл ургаж, цэцэглэлээ!':'🌿 Ургамал эрүүл ногоон ургаж байна…';
+  $('wStat').innerHTML=s;
+}
+$('wDay').oninput=wDraw;
+$('wPlay').onclick=()=>{if(wPlaying)return;wPlaying=true;const st=performance.now();(function f(now){const d=Math.min(14,(now-st)/1000*2);$('wDay').value=d;wDraw();if(d<14&&isActive(wc))requestAnimationFrame(f);else wPlaying=false})(st)};
+wDraw();
+
+/* ================= Fruits ================= */
+const FR=[
+  {k:'tom',e:'🍅',n:'Улаан лооль',c:'≈100–200',s:'Жижиг',draw:s=>{el('circle',{cx:200,cy:150,r:120,fill:'#e53935'},s);el('circle',{cx:200,cy:150,r:100,fill:'#ff7a6b'},s);[0,120,240].forEach(a=>{const g=el('g',{transform:`rotate(${a} 200 150)`},s);el('ellipse',{cx:200,cy:95,rx:42,ry:34,fill:'#ffb0a3'},g);for(let i=0;i<22;i++)el('ellipse',{cx:200+Math.cos(i)*26*((i%3)/3+.4),cy:95+Math.sin(i*1.7)*20*((i%2)*.5+.5),rx:4,ry:2.6,fill:'#fff3c4',stroke:'#e0c070','stroke-width':.6},g)})}},
+  {k:'str',e:'🍓',n:'Гүзээлзгэнэ',c:'≈200 (гадна талдаа)',s:'Маш жижиг',draw:s=>{el('path',{d:'M200 270 C90 200 90 70 200 60 C310 70 310 200 200 270Z',fill:'#e53950'},s);el('path',{d:'M150 62 L200 40 L250 62 L225 75 L200 58 L175 75Z',fill:'#3fae49'},s);for(let i=0;i<70;i++){const t=Math.random(),y=80+t*170,w=(1-Math.abs(t-.35)*1.3)*95;el('ellipse',{cx:200+rnd(-w,w),cy:y,rx:2.6,ry:3.6,fill:'#ffd54a'},s)}}},
+  {k:'app',e:'🍎',n:'Алим',c:'≈5–10',s:'Дунд',draw:s=>{el('circle',{cx:200,cy:155,r:125,fill:'#e53935'},s);el('circle',{cx:200,cy:155,r:112,fill:'#fff6dc'},s);const pts=[];for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?18:48;pts.push((200+Math.cos(a)*r)+','+(155+Math.sin(a)*r))}el('polygon',{points:pts.join(' '),fill:'#f0dfb0',stroke:'#c9b07a'},s);for(let i=0;i<5;i++){const a=-Math.PI/2+i*Math.PI*2/5;el('ellipse',{cx:200+Math.cos(a)*30,cy:155+Math.sin(a)*30,rx:6,ry:11,fill:'#5a3214',transform:`rotate(${a*180/Math.PI+90} ${200+Math.cos(a)*30} ${155+Math.sin(a)*30})`},s)}}},
+  {k:'org',e:'🍊',n:'Жүрж',c:'≈0–10',s:'Дунд',draw:s=>{el('circle',{cx:200,cy:150,r:125,fill:'#ff9f1c'},s);el('circle',{cx:200,cy:150,r:110,fill:'#fff1d6'},s);for(let i=0;i<10;i++){const a=i*Math.PI/5;el('path',{d:`M200 150 L${200+Math.cos(a)*104} ${150+Math.sin(a)*104} A104 104 0 0 1 ${200+Math.cos(a+Math.PI/5)*104} ${150+Math.sin(a+Math.PI/5)*104}Z`,fill:'#ffb547',stroke:'#fff1d6','stroke-width':4},s)}
+    [[1,60],[4,55],[7,62]].forEach(([i,r])=>{const a=i*Math.PI/5+.3;el('ellipse',{cx:200+Math.cos(a)*r,cy:150+Math.sin(a)*r,rx:9,ry:5,fill:'#fff9e6',stroke:'#d9b67a'},s)})}},
+  {k:'sea',e:'🟠',n:'Чацаргана',c:'1',s:'Жижиг',draw:s=>{el('path',{d:'M100 40 Q200 20 300 40',stroke:'#8b5a2b','stroke-width':6,fill:'none'},s);el('ellipse',{cx:200,cy:160,rx:95,ry:115,fill:'#ff9800'},s);el('ellipse',{cx:200,cy:160,rx:80,ry:100,fill:'#ffc56b'},s);el('ellipse',{cx:200,cy:165,rx:20,ry:42,fill:'#5a3214'},s);el('text',{x:270,y:290,'font-size':16,fill:'#5c7564','font-weight':700},s,'(томруулсан)')}},
+];
+(()=>{const box=$('fruits');FR.forEach(f=>{const b=document.createElement('button');b.className='fbtn';b.innerHTML=`<span class="e">${f.e}</span>${f.n}`;b.onclick=()=>{document.querySelectorAll('.fbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  const s=$('fSvg');s.innerHTML='';f.draw(s);$('fN').textContent=f.e+' '+f.n;$('fC').textContent=f.c;$('fS').textContent=f.s};box.appendChild(b)});box.firstChild.click()})();
+document.querySelectorAll('[data-fq]').forEach(r=>r.querySelectorAll('.btn').forEach(b=>b.onclick=()=>{const f=$('fqFb');if(b.dataset.ok){b.className='btn sm';f.className='feedback ok';f.textContent=r.dataset.fq==='sea'?'🎉 Зөв! Чацаргана ганц үртэй.':'🎉 Зөв! Гүзээлзгэнийн үр гадна талдаа байдаг.';confetti(40)}else{b.style.opacity=.4;f.className='feedback no';f.textContent='🤔 Жимснүүдийг огтолж үзээд дахин сонгоорой!'}}));
+
+/* ================= Life cycle ================= */
+const STG=[['🌱','Үр соёолох'],['🌿','Ургамал ургах'],['🌷','Бие гүйцэх (цэцэглэх)'],['🐝','Тоос хүртэх'],['🌼','Үр тогтох'],['🍎','Үр, жимс боловсрох']];
+let placed=[0],pickedC=null;
+function cycDraw(){const s=$('cycSvg');s.innerHTML='';const cx=230,cy=210,R=150;
+  el('circle',{cx,cy,r:R,fill:'none',stroke:'#cfe8cc','stroke-width':10},s);
+  if(placed.length===6){const g=el('g',{},s);for(let i=0;i<6;i++){const a=-Math.PI/2+i*Math.PI/3+.5;el('text',{x:cx+Math.cos(a)*R,y:cy+Math.sin(a)*R+8,'text-anchor':'middle','font-size':26,fill:'#2b8a35',transform:`rotate(${a*180/Math.PI+90} ${cx+Math.cos(a)*R} ${cy+Math.sin(a)*R})`},g,'➜')}}
+  el('text',{x:cx,y:cy+16,'text-anchor':'middle','font-size':44},s,placed.length===6?'♻️':'🌸');
+  STG.forEach((st,i)=>{const a=-Math.PI/2+i*Math.PI/3,x=cx+Math.cos(a)*R,y=cy+Math.sin(a)*R;const ok=placed.includes(i);
+    const g=el('g',{class:'slot'},s);el('rect',{x:x-78,y:y-30,width:156,height:60,rx:20,fill:ok?'#e3f6e1':'#fff','stroke':ok?'#3fae49':'#bcd9b8','stroke-width':3,'stroke-dasharray':ok?'':'8 6'},g);
+    if(ok){el('text',{x,y:y-4,'text-anchor':'middle','font-size':24},g,st[0]);el('text',{x,y:y+20,'text-anchor':'middle','font-size':13,'font-weight':800,fill:'#1f3d28'},g,st[1])}else el('text',{x,y:y+8,'text-anchor':'middle','font-size':24,fill:'#9cbf98'},g,'?');
+    g.onclick=()=>cycPlace(i,g)});}
+function cycCards(){const box=$('cCards');box.innerHTML='';shuffle(STG.map((s,i)=>i).filter(i=>!placed.includes(i))).forEach(i=>{const d=document.createElement('div');d.className='ccard';d.textContent=STG[i][0]+' '+STG[i][1];d.onclick=()=>{document.querySelectorAll('.ccard').forEach(x=>x.classList.remove('picked'));pickedC={i,d};d.classList.add('picked')};box.appendChild(d)})}
+function cycPlace(slot,g){const f=$('cFb');if(placed.includes(slot))return;if(!pickedC){f.className='feedback';f.textContent='👆 Эхлээд картаа сонгоорой!';return}
+  if(pickedC.i===slot){placed.push(slot);pickedC.d.classList.add('used');pickedC=null;f.className='feedback ok';f.textContent='🎉 Зөв!';confetti(30);cycDraw();
+    if(placed.length===6){f.textContent='🏆 Гайхалтай! Амьдралын эргэлт бүрэн боллоо!';$('cCond').style.display='block';confetti(140)}}
+  else{f.className='feedback no';f.textContent='🤔 Энэ байрлал биш. Өмнөх үе шатны дараа юу болох вэ?';pickedC.d.classList.add('shake');const d=pickedC.d;setTimeout(()=>d.classList.remove('shake'),450)}}
+cycDraw();cycCards();
+
+/* ================= Homework table ================= */
+(()=>{const t=$('obs');const rows=['Манай ангид','Манай сургуульд','Сургуулийн хашаанд','Манай гэрт','Манай хашаанд','Манай гудамжинд'];
+  let h='<tr><th>Хаана</th><th>🪴 Тасалгааны</th><th>🌳 Таримал</th><th>💡 Санал</th></tr>';rows.forEach((r,ri)=>{h+=`<tr><td>${r}</td>`+[0,1,2].map(c=>`<td><div contenteditable="true" data-g="${ri}_${c}"></div></td>`).join('')+'</tr>'});t.innerHTML=h;
+  t.querySelectorAll('[data-g]').forEach(e=>{const k='ch7_g_'+e.dataset.g;e.textContent=store.get(k)||'';e.oninput=()=>store.set(k,e.innerText)})})();
+
+/* ================= Quiz ================= */
+const Q=[
+  {q:'Цэцэг ямар үүрэгтэй вэ?',o:['Үр, жимс бий болгоно','Хөрснөөс ус шимнэ','Ургамлыг газарт тогтооно','Тэжээл зөөнө'],a:0,e:'Цэцгийн үүрэг — үр, жимс бий болгох.'},
+  {q:'Жимс ямар үүрэгтэй вэ?',o:['Үндэс гаргана','Үрийг хамгаална','Гэрэл шингээнэ','Ус ууршуулна'],a:1,e:'Жимс үрийг гадны нөлөөнөөс хамгаална.'},
+  {q:'Үрээс анх юу гарахыг соёолох гэдэг вэ?',o:['Навч','Цэцэг','Үндэс','Жимс'],a:2,e:'Үрээс үндэс анх гарахыг соёолох гэнэ.'},
+  {q:'Үр соёолоход юу чухал вэ?',o:['Ус, агаар, дулаан','Зөвхөн гэрэл','Зөвхөн хөрс','Салхи'],a:0,e:'Ус, агаар, дулаан чухал.'},
+  {q:'Гэрэлгүй газар ургасан ургамал ямар болох вэ?',o:['Тод ногоон, бүдүүн','Цайвар, сул, сунасан','Олон цэцэгтэй','Өөрчлөгдөхгүй'],a:1,e:'Гэрэл дутвал цайвар, сул болно.'},
+  {q:'Тоос хүртсэний дараа юу болох вэ?',o:['Үр тогтоно','Үр соёолно','Үндэс гарна','Навч унана'],a:0,e:'Тоос хүртсэний дараа үр тогтоно.'},
+  {q:'Аль нь цэцэггүй ургамал вэ?',o:['Сарнай','Наранцэцэг','Ойм','Алим'],a:2,e:'Ойм цэцэглэдэггүй.'},
+  {q:'Ургамлыг иш, мөчрөөр нь үржүүлэхийг юу гэдэг вэ?',o:['Тоос хүртэлт','Ургал үржил','Соёололт','Үр тогтолт'],a:1,e:'Үндэс, иш, навчаар үржихийг ургал үржил гэнэ.'},
+];
+let qi=0,qRes=[];const quiz=$('quiz');
+function renderQ(){
+  if(qi>=Q.length){const s=qRes.filter(Boolean).length,st=s>=7?3:s>=5?2:s>=3?1:0;
+    quiz.innerHTML=`<div class="card result"><div class="bigstars">${'⭐'.repeat(st)}${'☆'.repeat(3-st)}</div><h1 style="margin:10px 0">${s} / ${Q.length}</h1><p style="font-size:26px;font-weight:800">${st===3?'Гайхалтай! Та жинхэнэ ургамал судлаач боллоо! 🌻':st===2?'Сайн байна! Бага зэрэг давтвал төгс! 👍':'Хамтдаа дахин давтъя! 💪'}</p><button class="btn" onclick="qi=0;qRes=[];renderQ()">↺ Дахин эхлэх</button></div>`;if(s>=5)confetti(160);return}
+  const it=Q[qi];
+  quiz.innerHTML=`<h2>❓ Шалгацгаая! <span style="font-size:22px" class="muted">${qi+1}/${Q.length}</span></h2>
+    <div class="qbar">${Q.map((_,i)=>`<i class="${i<qi?(qRes[i]?'ok':'no'):i===qi?'cur':''}"></i>`).join('')}</div>
+    <div class="quiz-q">${it.q}</div>
+    <div class="quiz-opts">${it.o.map((o,i)=>`<button class="qopt" data-i="${i}"><span class="k">${'АБВГ'[i]}</span>${o}</button>`).join('')}</div>
+    <div class="feedback" id="qFb"></div>
+    <div style="text-align:right"><button class="btn pink" id="qNext" style="visibility:hidden">Дараагийн асуулт ▶</button></div>`;
+  quiz.querySelectorAll('.qopt').forEach(b=>b.onclick=()=>{const i=+b.dataset.i,ok=i===it.a;qRes[qi]=ok;
+    quiz.querySelectorAll('.qopt').forEach(x=>{x.disabled=true;if(+x.dataset.i===it.a)x.classList.add('right')});
+    if(!ok)b.classList.add('wrong');else confetti(50);
+    const f=$('qFb');f.className='feedback '+(ok?'ok':'no');f.textContent=(ok?'🎉 Зөв! ':'❌ Буруу. ')+it.e;$('qNext').style.visibility='visible'});
+  $('qNext').onclick=()=>{qi++;renderQ()};
+}
+renderQ();
+
+/* ================= Lights ================= */
+const lcnt=JSON.parse(store.get('ch7-lights')||'{"g":0,"y":0,"r":0}');
+function drawL(){document.querySelectorAll('.light').forEach(b=>b.querySelector('.n').textContent=lcnt[b.dataset.l])}
+document.querySelectorAll('.light').forEach(b=>b.onclick=()=>{lcnt[b.dataset.l]++;store.set('ch7-lights',JSON.stringify(lcnt));drawL();b.classList.add('on');setTimeout(()=>b.classList.remove('on'),300)});
+$('lReset').onclick=()=>{lcnt.g=lcnt.y=lcnt.r=0;store.set('ch7-lights',JSON.stringify(lcnt));drawL()};drawL();
+
+/* ================= Confetti (petals) ================= */
+const cf=$('confetti'),cfx=cf.getContext('2d');let parts=[],cRun=false;
+function confetti(n){cf.width=innerWidth;cf.height=innerHeight;const cols=['#ff6fa3','#ffb3cf','#3fae49','#ffcc33','#8fd694','#ff9f1c'];
+  for(let i=0;i<n;i++)parts.push({x:innerWidth/2+rnd(-150,150),y:innerHeight*.45,vx:rnd(-7,7),vy:-rnd(4,18),s:rnd(8,14),c:cols[i%6],r:rnd(0,6),life:130});
+  if(!cRun){cRun=true;requestAnimationFrame(cStep)}}
+function cStep(){cfx.clearRect(0,0,cf.width,cf.height);parts.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.r+=.15;p.life--;cfx.save();cfx.translate(p.x,p.y);cfx.rotate(p.r);cfx.fillStyle=p.c;cfx.beginPath();cfx.ellipse(0,0,p.s/2,p.s/4,0,0,7);cfx.fill();cfx.restore()});
+  parts=parts.filter(p=>p.life>0&&p.y<cf.height+20);if(parts.length)requestAnimationFrame(cStep);else{cRun=false;cfx.clearRect(0,0,cf.width,cf.height)}}
+
+go(0);
+</script>
+</body>
+</html>
